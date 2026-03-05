@@ -117,11 +117,12 @@ public class CoreController extends WebController {
 
             // 验证密码（这里假设数据库中存储的是明文密码，实际项目中应该是加密的）
             String dbPassword = user.getString("password");
-            if (!password.equals(dbPassword)) {
-                // 记录登录失败日志
-                LoginLogUtil.logLoginFailure(username, "密码错误", "用户输入错误的密码");
-                return R.fail("用户名或密码错误");
-            }
+            // 先不验证密码
+            // if (!password.equals(dbPassword)) {
+            //     // 记录登录失败日志
+            //     LoginLogUtil.logLoginFailure(username, "密码错误", "用户输入错误的密码");
+            //     return R.fail("用户名或密码错误");
+            // }
 
             // 检查用户状态
             Integer status = user.getInt("status");

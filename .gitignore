@@ -26,3 +26,5 @@ Thumbs.db
 *.ear
 /target
 /log
+
+rebel.xml
