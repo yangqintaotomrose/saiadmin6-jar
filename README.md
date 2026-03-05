@@ -1,5 +1,5 @@
 # Spring Boot 企业级管理系统
-1
+
 <div align="center">
 
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-2.7.0-green.svg)](https://spring.io/projects/spring-boot)
