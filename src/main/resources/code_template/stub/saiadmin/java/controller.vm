@@ -1,0 +1,151 @@
+package com.abc.web.controller.common;
+
+import com.abc.web.controller.WebController;
+import com.abc.web.domain.HttpStatus;
+import com.abc.web.domain.R;
+import com.alibaba.fastjson.JSONArray;
+import com.xtr.framework.hutool.*;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+
+/**
+ * ${class_name}控制器 - 根据${table_name}表结构生成
+ */
+@RestController
+@RequestMapping("/proxy/core/${business_name}/")
+public class ${class_name}Controller extends WebController {
+
+    /**
+     * 查询${menu_name}列表
+     */
+    @RequestMapping(value = "index")
+    public Object list(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        IData param = getIDataFromStream();
+        BaseDao dao = BaseDao.getDao("");
+        SQLParser parser = new SQLParser(param);
+        parser.addSQL(" SELECT t.*");
+        parser.addSQL(" FROM ${table_name} t ");
+        parser.addSQL(" WHERE 1=1 ");
+        #foreach($column in $columns)
+            #if($column.is_query == 2 && $column.query_type != 'between')
+        parser.addSQL(" AND t.${column.column_name} LIKE CONCAT('%', :${column.column_name}, '%') ");
+            #elseif($column.is_query == 2 && $column.query_type == 'between')
+        parser.addSQL(" AND t.${column.column_name} BETWEEN :${column.column_name}[0] AND :${column.column_name}[1] ");
+            #end
+        #end
+        parser.addSQL(" AND t.delete_time IS NULL ");
+        Pagination page = request.getAttribute("is_export") == null ? this.getSinglePage(param) : this.getExportPage();
+        IDataset list = dao.queryPage(parser, param, page);
+        // 处理数据
+        list.stream().forEach(a -> {
+            IData obj = (IData) a;
+            obj.set("create_time", obj.getString("create_time"));
+            obj.set("update_time", obj.getString("update_time"));
+        });
+
+        return wrapPageQueryList(list, page);
+    }
+
+    /**
+     * 获取${menu_name}详情
+     */
+    @RequestMapping(value = "detail")
+    public Object detail(HttpServletRequest request, HttpServletResponse response) {
+        IData param = getRequestParam();
+        BaseDao dao = BaseDao.getDao("");
+        IData one = dao.queryByFirst("SELECT * FROM ${table_name} WHERE id=? AND delete_time IS NULL", param.getLong("id"));
+        if (one == null) {
+            return R.fail("${menu_name}不存在");
+        }
+        IData two = ChangeBean.db_vo(one);
+        return R.ok(two);
+    }
+
+    /**
+     * 添加${menu_name}
+     */
+    @RequestMapping(value = "save")
+    public Object add(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        IData info = getIDataFromStream();
+        BaseDao dao = BaseDao.getDao("");
+        info.set("create_time", dao.getSysTimeLocal());
+        info.set("update_time", dao.getSysTimeLocal());
+        info.setTableName("${table_name}");
+        dao.insert(info);
+        return R.ok("${menu_name}添加成功");
+    }
+
+    /**
+     * 编辑${menu_name}
+     */
+    @RequestMapping(value = "update")
+    public Object edit(HttpServletRequest request, HttpServletResponse response) {
+        IData info = getIDataFromStream();
+        BaseDao dao = BaseDao.getDao("");
+        info.set("update_time", dao.getSysTimeLocal());
+        info.setTableName("${table_name}");
+        dao.updateById(info);
+        return R.ok("${menu_name}修改成功");
+    }
+
+    /**
+     * 删除${menu_name}（软删除）
+     */
+    @RequestMapping(value = "destroy")
+    public Object delete(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        IData param = getIDataFromStream();
+        BaseDao dao = BaseDao.getDao("");
+        JSONArray ids = (JSONArray) param.getObj("ids");
+        for (int i = 0; i < ids.size(); i++) {
+            Integer a = ids.getInteger(i);
+            IData updateData = new IData();
+            updateData.set("id", a);
+            updateData.set("delete_time", dao.getSysTimeLocal());
+            updateData.setTableName("${table_name}");
+            dao.updateById(updateData);
+        }
+        return R.ok("${menu_name}删除成功");
+    }
+
+    /**
+     * 批量删除${menu_name}（软删除）
+     */
+    @RequestMapping(value = "deletes")
+    public Object deletes(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        IData param = getRequestParam();
+        BaseDao dao = BaseDao.getDao("");
+        String ids = param.getString("ids");
+        String[] idArray = ids.split(",");
+        for (String id : idArray) {
+            IData updateData = new IData();
+            updateData.set("id", Integer.parseInt(id));
+            updateData.set("delete_time", dao.getSysTimeLocal());
+            updateData.setTableName("${table_name}");
+            dao.updateById(updateData);
+        }
+        return R.ok("批量删除成功");
+    }
+
+    /**
+     * 恢复已删除的${menu_name}
+     */
+    @RequestMapping(value = "restore")
+    public Object restore(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        IData param = getRequestParam();
+        BaseDao dao = BaseDao.getDao("");
+        String ids = param.getString("ids");
+        String[] idArray = ids.split(",");
+        for (String id : idArray) {
+            IData updateData = new IData();
+            updateData.set("id", Integer.parseInt(id));
+            updateData.set("delete_time", null);
+            updateData.setTableName("${table_name}");
+            dao.updateById(updateData);
+        }
+        return R.ok("批量恢复成功");
+    }
+}
